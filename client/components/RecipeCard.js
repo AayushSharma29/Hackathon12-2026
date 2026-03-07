@@ -1,15 +1,15 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-// Displays a single recipe returned from Spoonacular
 const RecipeCard = ({ recipe, onSave }) => {
+  const navigate = useNavigate();
+
   const handleSave = () => {
-    // TODO: call onSave(recipe) to save to user's history/saved list
+    onSave(recipe);
   };
 
   const handleViewDetails = () => {
-    // TODO: navigate to recipe detail page or open modal
-    // Recipe fields from Spoonacular: recipe.id, recipe.title, recipe.image
-    // recipe.usedIngredientCount, recipe.missedIngredientCount, recipe.likes
+    navigate(`/recipe/${recipe.id}`);
   };
 
   return (

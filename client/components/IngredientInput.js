@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
 
-// Component for adding/removing ingredients to search with
 const IngredientInput = ({ onIngredientsChange }) => {
   const [inputValue, setInputValue] = useState('');
   const [ingredients, setIngredients] = useState([]);
 
   const handleAddIngredient = () => {
-    // TODO: validate inputValue is not empty/duplicate
-    // TODO: update ingredients list
-    // TODO: call onIngredientsChange(updatedIngredients)
+    const trimmed = inputValue.trim();
+    if (!trimmed || ingredients.includes(trimmed)) return;
+    const updated = [...ingredients, trimmed];
+    setIngredients(updated);
+    setInputValue('');
+    onIngredientsChange(updated);
   };
 
   const handleRemoveIngredient = (ingredientToRemove) => {
-    // TODO: filter out ingredientToRemove from ingredients
-    // TODO: call onIngredientsChange(updatedIngredients)
+    const updated = ingredients.filter((i) => i !== ingredientToRemove);
+    setIngredients(updated);
+    onIngredientsChange(updated);
   };
 
   const handleKeyDown = (e) => {
-    // TODO: if Enter key, call handleAddIngredient
+    if (e.key === 'Enter') handleAddIngredient();
   };
 
   return (

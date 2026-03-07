@@ -24,17 +24,15 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password before saving
 UserSchema.pre('save', async function (next) {
-  // TODO: if password is not modified, call next() and return
-  // TODO: generate salt with bcrypt.genSalt(10)
-  // TODO: hash this.password with the salt
+  if (!this.isModified('password')) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// Compare entered password to hashed password
 UserSchema.methods.matchPassword = async function (enteredPassword) {
-  // TODO: return bcrypt.compare(enteredPassword, this.password)
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 module.exports = mongoose.model('User', UserSchema);

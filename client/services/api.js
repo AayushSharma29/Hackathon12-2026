@@ -1,72 +1,104 @@
-// Central service for all HTTP requests to the backend
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// Helper: get JWT token from localStorage
 const getToken = () => localStorage.getItem('token');
 
-// Helper: build auth headers
 const authHeaders = () => ({
   'Content-Type': 'application/json',
   Authorization: `Bearer ${getToken()}`,
 });
 
+const handleResponse = async (res) => {
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Request failed');
+  return data;
+};
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export const loginUser = async (email, password) => {
-  // TODO: POST /api/auth/login with { email, password }
-  // TODO: return { token, user } on success
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  return handleResponse(res);
 };
 
 export const registerUser = async (name, email, password) => {
-  // TODO: POST /api/auth/register with { name, email, password }
-  // TODO: return { token, user } on success
+  const res = await fetch(`${BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password }),
+  });
+  return handleResponse(res);
 };
 
 // ─── Recipes (Spoonacular via backend) ───────────────────────────────────────
 
 export const searchRecipesByIngredients = async (ingredients) => {
-  // TODO: GET /api/spoonacular/findByIngredients?ingredients=egg,milk,...
-  // TODO: return array of recipe objects
+  const query = ingredients.join(',');
+  const res = await fetch(`${BASE_URL}/spoonacular/findByIngredients?ingredients=${encodeURIComponent(query)}`, {
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
 };
 
 export const saveRecipe = async (recipe) => {
-  // TODO: POST /api/spoonacular/save with recipe data
-  // TODO: requires auth headers
+  const res = await fetch(`${BASE_URL}/spoonacular/save`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(recipe),
+  });
+  return handleResponse(res);
 };
 
 export const getCookingHistory = async () => {
-  // TODO: GET /api/spoonacular/history
-  // TODO: requires auth headers
-  // TODO: return array of previously cooked/saved recipes
+  const res = await fetch(`${BASE_URL}/spoonacular/history`, {
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
 };
 
 // ─── Pantry ──────────────────────────────────────────────────────────────────
 
 export const getPantry = async () => {
-  // TODO: GET /api/pantry
-  // TODO: requires auth headers
-  // TODO: return array of pantry items
+  const res = await fetch(`${BASE_URL}/pantry`, {
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
 };
 
 export const addPantryItem = async (item) => {
-  // TODO: POST /api/pantry with { name, quantity, expiryDate }
-  // TODO: requires auth headers
+  const res = await fetch(`${BASE_URL}/pantry`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(item),
+  });
+  return handleResponse(res);
 };
 
 export const removePantryItem = async (itemId) => {
-  // TODO: DELETE /api/pantry/:itemId
-  // TODO: requires auth headers
+  const res = await fetch(`${BASE_URL}/pantry/${itemId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
 };
 
 // ─── Waste Tracking ──────────────────────────────────────────────────────────
 
 export const getWasteStats = async () => {
-  // TODO: GET /api/waste/stats
-  // TODO: requires auth headers
-  // TODO: return { itemsWasted, itemsSaved, wasteReduced }
+  const res = await fetch(`${BASE_URL}/waste/stats`, {
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
 };
 
 export const logWasteEvent = async (itemId, wasWasted) => {
-  // TODO: POST /api/waste/log with { itemId, wasWasted }
-  // TODO: requires auth headers
+  const res = await fetch(`${BASE_URL}/waste/log`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ itemId, wasWasted }),
+  });
+  return handleResponse(res);
 };

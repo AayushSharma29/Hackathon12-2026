@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser } from '../services/api';
 
-// Landing page with login / register
 const Home = ({ onLogin }) => {
   const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
@@ -10,16 +9,29 @@ const Home = ({ onLogin }) => {
   const [error, setError] = useState(null);
 
   const handleChange = (e) => {
-    // TODO: update formData field by e.target.name
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
-    // TODO: validate form fields are filled
-    // TODO: call loginUser or registerUser based on isRegistering
-    // TODO: on success, store JWT token in localStorage
-    // TODO: call onLogin(user) to update app state
-    // TODO: navigate to /dashboard
-    // TODO: handle errors with setError
+    setError(null);
+    const { name, email, password } = formData;
+
+    if (!email || !password || (isRegistering && !name)) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    try {
+      const data = isRegistering
+        ? await registerUser(name, email, password)
+        : await loginUser(email, password);
+
+      localStorage.setItem('token', data.token);
+      onLogin(data.user);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Authentication failed.');
+    }
   };
 
   return (

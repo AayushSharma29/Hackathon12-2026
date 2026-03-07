@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
+import Home from './pages/home';
 import Dashboard from './pages/Dashboard';
 import Pantry from './pages/Pantry';
 
@@ -9,23 +10,31 @@ const App = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // TODO: check localStorage for existing JWT token on app load
-    // TODO: if token exists, decode it and setUser(decoded)
-    // TODO: if token is expired, clear it and leave user as null
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.exp * 1000 < Date.now()) {
+          localStorage.removeItem('token');
+        } else {
+          setUser(decoded);
+        }
+      } catch {
+        localStorage.removeItem('token');
+      }
+    }
   }, []);
 
   const handleLogin = (userData) => {
-    // TODO: setUser(userData)
+    setUser(userData);
   };
 
   const handleLogout = () => {
-    // TODO: remove token from localStorage
-    // TODO: setUser(null)
+    localStorage.removeItem('token');
+    setUser(null);
   };
 
-  // Wrapper to protect routes that require login
   const PrivateRoute = ({ children }) => {
-    // TODO: return children if user is logged in, else <Navigate to="/" />
     return user ? children : <Navigate to="/" />;
   };
 

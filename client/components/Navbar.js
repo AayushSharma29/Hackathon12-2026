@@ -1,14 +1,13 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-// Top navigation bar — shown on all pages
 const Navbar = ({ user, onLogout }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // TODO: clear auth token from localStorage
-    // TODO: call onLogout() to update app state
-    // TODO: navigate to home
+    localStorage.removeItem('token');
+    onLogout();
+    navigate('/');
   };
 
   return (
@@ -29,9 +28,7 @@ const Navbar = ({ user, onLogout }) => {
             <button onClick={handleLogout}>Logout</button>
           </>
         ) : (
-          <>
-            <Link to="/">Login</Link>
-          </>
+          <Link to="/">Login</Link>
         )}
       </div>
     </nav>

@@ -3,29 +3,48 @@ import IngredientInput from '../components/IngredientInput';
 import RecipeCard from '../components/RecipeCard';
 import { searchRecipesByIngredients, saveRecipe } from '../services/api';
 
-// Main recipe search page
 const Dashboard = () => {
   const [ingredients, setIngredients] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
 
   const handleIngredientsChange = (updatedIngredients) => {
-    // TODO: update ingredients state
+    setIngredients(updatedIngredients);
   };
 
   const handleSearch = async () => {
-    // TODO: validate at least one ingredient is entered
-    // TODO: setLoading(true)
-    // TODO: call searchRecipesByIngredients(ingredients)
-    // TODO: setRecipes(results)
-    // TODO: handle errors with setError
-    // TODO: setLoading(false)
+    if (ingredients.length === 0) {
+      setError('Please add at least one ingredient.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const results = await searchRecipesByIngredients(ingredients);
+      setRecipes(results);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch recipes.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveRecipe = async (recipe) => {
-    // TODO: call saveRecipe(recipe) from api service
-    // TODO: show success/error feedback to user
+    try {
+      await saveRecipe({
+        spoonacularId: recipe.id,
+        title: recipe.title,
+        image: recipe.image,
+        usedIngredients: (recipe.usedIngredients || []).map((i) => i.name),
+        missedIngredients: (recipe.missedIngredients || []).map((i) => i.name),
+      });
+      setSuccessMsg(`"${recipe.title}" saved!`);
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to save recipe.');
+    }
   };
 
   return (
@@ -40,6 +59,7 @@ const Dashboard = () => {
       </button>
 
       {error && <p className="error">{error}</p>}
+      {successMsg && <p className="success">{successMsg}</p>}
 
       <div className="recipe-grid">
         {recipes.map((recipe) => (

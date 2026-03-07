@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: foodfinder
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  server:
+    build: ./server
+    ports:
+      - "5002:5000"
+    environment:
+      DATABASE_URL: postgresql://admin:password@postgres:5432/foodfinder
+      JWT_SECRET: f8k2p9x4m7q1r6w3y5n0t2v8u4j6c9e1
+      SPOONACULAR_API_KEY: your_key_here
+    depends_on:
+      - postgres
+
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:5002/api
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:

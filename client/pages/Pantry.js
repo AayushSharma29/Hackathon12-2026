@@ -1,50 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { getPantry, addPantryItem, removePantryItem } from '../services/api';
+import { getPantry, addPantryItem, removePantryItem, getWasteStats } from '../services/api';
 
-// Manage the user's saved pantry ingredients + food waste tracker
 const Pantry = () => {
   const [pantryItems, setPantryItems] = useState([]);
   const [newItem, setNewItem] = useState({ name: '', quantity: '', expiryDate: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [wasteStats, setWasteStats] = useState(null);
 
   useEffect(() => {
-    // TODO: call fetchPantry() on component mount
+    fetchPantry();
+    fetchWasteStats();
   }, []);
 
   const fetchPantry = async () => {
-    // TODO: call getPantry() from api service
-    // TODO: setPantryItems(data)
-    // TODO: handle errors
-    // TODO: setLoading(false)
+    try {
+      const data = await getPantry();
+      setPantryItems(data);
+    } catch (err) {
+      setError(err.message || 'Failed to load pantry.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWasteStats = async () => {
+    try {
+      const stats = await getWasteStats();
+      setWasteStats(stats);
+    } catch {
+      // non-critical, ignore
+    }
   };
 
   const handleAddItem = async () => {
-    // TODO: validate newItem fields
-    // TODO: call addPantryItem(newItem)
-    // TODO: refresh pantry list
-    // TODO: reset newItem form
+    if (!newItem.name) {
+      setError('Ingredient name is required.');
+      return;
+    }
+    setError(null);
+    try {
+      await addPantryItem(newItem);
+      setNewItem({ name: '', quantity: '', expiryDate: '' });
+      await fetchPantry();
+    } catch (err) {
+      setError(err.message || 'Failed to add item.');
+    }
   };
 
   const handleRemoveItem = async (itemId) => {
-    // TODO: call removePantryItem(itemId)
-    // TODO: update pantryItems state by filtering out removed item
+    try {
+      await removePantryItem(itemId);
+      setPantryItems((prev) => prev.filter((i) => i._id !== itemId));
+    } catch (err) {
+      setError(err.message || 'Failed to remove item.');
+    }
   };
 
   const getExpiryStatus = (expiryDate) => {
-    // TODO: return 'expired', 'expiring-soon' (within 3 days), or 'fresh'
-    // Used to color-code items in the UI for food waste awareness
+    if (!expiryDate) return 'fresh';
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffDays = (expiry - now) / (1000 * 60 * 60 * 24);
+    if (diffDays < 0) return 'expired';
+    if (diffDays <= 3) return 'expiring-soon';
+    return 'fresh';
   };
 
   return (
     <div className="pantry">
       <h1>🧺 My Pantry</h1>
 
-      {/* Food Waste Tracker — hackathon extra feature */}
+      {/* Food Waste Tracker */}
       <div className="waste-tracker">
         <h2>♻️ Food Waste Tracker</h2>
-        {/* TODO: show count of expired vs used items */}
-        {/* TODO: show "items saved from waste" counter */}
+        {wasteStats ? (
+          <div className="waste-stats">
+            <span>🗑️ Items wasted: {wasteStats.itemsWasted}</span>
+            <span>🍳 Recipes made: {wasteStats.recipesMade}</span>
+            <span>✅ Ingredients saved from waste: {wasteStats.ingredientsSaved}</span>
+          </div>
+        ) : (
+          <p>Loading stats...</p>
+        )}
       </div>
 
       {/* Add new item form */}
@@ -81,7 +119,7 @@ const Pantry = () => {
             <div key={item._id} className={`pantry-item ${getExpiryStatus(item.expiryDate)}`}>
               <span>{item.name}</span>
               <span>{item.quantity}</span>
-              <span>Expires: {item.expiryDate}</span>
+              <span>Expires: {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A'}</span>
               <button onClick={() => handleRemoveItem(item._id)}>Remove</button>
             </div>
           ))

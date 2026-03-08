@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import Navbar from './components/Navbar';
-import Home from './pages/home';
+import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Pantry from './pages/Pantry';
 

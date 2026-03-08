@@ -1,14 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const Ingredient = require('../models/Ingredient');
-const Recipe = require('../models/Recipe');
+const { PrismaClient } = require('@prisma/client');
 const { protect } = require('../middleware/auth');
+const prisma = new PrismaClient();
 
-// GET /api/waste/stats — summary of user's food waste stats
+// GET /api/waste/stats
 router.get('/stats', protect, async (req, res) => {
   try {
-    const itemsWasted = await Ingredient.countDocuments({ user: req.user._id, wasWasted: true });
-    const cookedRecipes = await Recipe.find({ user: req.user._id, cooked: true });
+    const itemsWasted = await prisma.ingredient.count({
+      where: { userId: req.user.id, wasWasted: true },
+    });
+
+    const cookedRecipes = await prisma.recipe.findMany({
+      where: { userId: req.user.id, cooked: true },
+    });
+
     const recipesMade = cookedRecipes.length;
     const ingredientsSaved = cookedRecipes.reduce(
       (sum, r) => sum + (r.usedIngredients ? r.usedIngredients.length : 0),
@@ -21,17 +27,18 @@ router.get('/stats', protect, async (req, res) => {
   }
 });
 
-// POST /api/waste/log — mark an ingredient as wasted or saved
+// POST /api/waste/log
 router.post('/log', protect, async (req, res) => {
   try {
     const { itemId, wasWasted } = req.body;
-    const item = await Ingredient.findById(itemId);
+    const item = await prisma.ingredient.findUnique({ where: { id: itemId } });
     if (!item) return res.status(404).json({ message: 'Item not found' });
-    if (item.user.toString() !== req.user._id.toString())
-      return res.status(403).json({ message: 'Not authorized' });
+    if (item.userId !== req.user.id) return res.status(403).json({ message: 'Not authorized' });
 
-    item.wasWasted = wasWasted;
-    const updated = await item.save();
+    const updated = await prisma.ingredient.update({
+      where: { id: itemId },
+      data: { wasWasted },
+    });
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });

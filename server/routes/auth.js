@@ -1,7 +1,10 @@
+// server/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -13,14 +16,19 @@ router.post('/register', async (req, res) => {
     if (!name || !email || !password)
       return res.status(400).json({ message: 'All fields are required' });
 
-    const existing = await User.findOne({ email });
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing)
       return res.status(400).json({ message: 'Email already in use' });
 
-    const user = await User.create({ name, email, password });
-    const token = generateToken(user._id);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email } });
+    const user = await prisma.user.create({
+      data: { name, email, password: hashedPassword },
+    });
+
+    const token = generateToken(user.id);
+    res.status(201).json({ token, user: { id: user.id, name: user.name, email: user.email } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -33,12 +41,16 @@ router.post('/login', async (req, res) => {
     if (!email || !password)
       return res.status(400).json({ message: 'Email and password are required' });
 
-    const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password)))
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user)
       return res.status(401).json({ message: 'Invalid email or password' });
 
-    const token = generateToken(user._id);
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match)
+      return res.status(401).json({ message: 'Invalid email or password' });
+
+    const token = generateToken(user.id);
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
